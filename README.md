@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CarMarket
 
-## Getting Started
+Nordic car reseller marketplace for independent dealers in Denmark, Sweden, Norway, and Finland.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 16** (App Router, TypeScript)
+- **Tailwind CSS 4** + shadcn/ui
+- **Prisma** ORM with **PostgreSQL** (Supabase)
+- **NextAuth.js v5** (email magic link + Google OAuth)
+- **Vitest** unit tests
+- **GitHub Actions** CI/CD → **Vercel** deployment
+
+## Prerequisites
+
+- Node.js 22+
+- pnpm 10+
+- A Supabase project (EU/Stockholm region) — [supabase.com](https://supabase.com)
+
+## Local Setup
+
+### 1. Clone and install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/benjamingronlund/car-marketplace.git
+cd car-marketplace
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill in the required values in `.env.local`:
 
-## Learn More
+| Variable | Where to get it |
+|---|---|
+| `DATABASE_URL` | Supabase → Settings → Database → Connection string (port 6543, transaction mode) |
+| `DIRECT_URL` | Supabase → Settings → Database → Connection string (port 5432, session mode) |
+| `AUTH_SECRET` | Run `openssl rand -base64 32` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | [Google Cloud Console](https://console.cloud.google.com/) |
+| `EMAIL_SERVER` | Any SMTP provider (e.g. Mailtrap for dev) |
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Run database migrations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm db:migrate
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. Start the dev server
 
-## Deploy on Vercel
+```bash
+pnpm dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open [http://localhost:3000](http://localhost:3000).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+| Script | Description |
+|---|---|
+| `pnpm dev` | Start dev server (Turbopack) |
+| `pnpm build` | Production build |
+| `pnpm lint` | ESLint + type-check |
+| `pnpm test` | Vitest (watch mode) |
+| `pnpm test:run` | Vitest (single run, used in CI) |
+| `pnpm db:migrate` | Run Prisma migrations (dev) |
+| `pnpm db:migrate:deploy` | Run Prisma migrations (production) |
+| `pnpm db:studio` | Open Prisma Studio |
+
+## Project Structure
+
+```
+car-marketplace/
+├── app/
+│   ├── (public)/listings/   # Browse listings
+│   ├── (auth)/sign-in/      # Authentication
+│   └── api/auth/            # NextAuth handlers
+├── lib/
+│   ├── db/client.ts         # Prisma client singleton
+│   └── auth/                # NextAuth config
+├── prisma/
+│   ├── schema.prisma        # Data model
+│   └── migrations/
+├── tests/
+│   └── unit/
+└── .github/workflows/
+    ├── ci.yml               # PR: lint + test
+    └── deploy.yml           # main: migrate + deploy to Vercel
+```
+
+## Environments
+
+| Environment | Branch | URL |
+|---|---|---|
+| Preview | PR branches | Vercel preview URL |
+| Staging | `main` | `staging.carmkt.io` |
+| Production | Tagged releases | `carmkt.io` |
+
+## Deployment
+
+The app deploys automatically via GitHub Actions + Vercel. Required GitHub secrets:
+
+- `DATABASE_URL`, `DIRECT_URL`
+- `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+- `AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- `EMAIL_SERVER`, `EMAIL_FROM`
